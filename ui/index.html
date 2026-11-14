@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>WF Emote</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="picker" class="picker hidden">
+        <img id="picker-logo" class="picker__logo" alt="" />
+        <div id="picker-title" class="picker__title"></div>
+        <div id="picker-list" class="picker__list"></div>
+    </div>
+
+    <div id="emote-menu" class="emenu hidden" aria-hidden="true">
+        <div class="emenu__panel">
+            <div class="emenu__brand">
+                <div class="emenu__brand-top"><span></span>Westfury<span></span></div>
+                <div class="emenu__brand-title">Emotes</div>
+                <div class="emenu__brand-tag">Express Yourself</div>
+            </div>
+
+            <div class="emenu__tabs" id="emenu-tabs"></div>
+
+            <div class="emenu__caption">
+                <span id="emenu-caption"></span>
+                <span id="emenu-caption-count"></span>
+            </div>
+
+            <div class="emenu__list" id="emenu-list"></div>
+
+            <div class="emenu__pager" id="emenu-pager">
+                <span class="emenu__pager-ico emenu__ico" style="--ico:url('assets/icons/up.png')"></span>
+                <span id="emenu-page">1 / 1</span>
+                <span class="emenu__pager-ico emenu__ico" style="--ico:url('assets/icons/down.png')"></span>
+            </div>
+
+            <div class="emenu__footer">
+                <div class="emenu__sel-title" id="emenu-sel-title"></div>
+                <div class="emenu__sel-desc" id="emenu-sel-desc"></div>
+            </div>
+
+            <div class="emenu__hint">Arrows or scroll navigate &middot; Click or Enter select &middot; Left/Right tabs &middot; F favourite &middot; Esc back</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
