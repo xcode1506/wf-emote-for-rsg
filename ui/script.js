@@ -5,6 +5,7 @@
         items: [],
         selectedIndex: 0,
         maxItems: 50,
+        rows: [],
         menuItems: [],
         menuIndex: 0,
         menuTabs: [],
@@ -164,11 +165,11 @@
     }
 
     function refreshSelection() {
-        const items = listEl.children;
-        for (let i = 0; i < items.length; i++) {
-            items[i].classList.toggle('selected', i === state.selectedIndex);
+        const rows = state.rows;
+        for (let i = 0; i < rows.length; i++) {
+            rows[i].classList.toggle('selected', i === state.selectedIndex);
         }
-        const current = items[state.selectedIndex];
+        const current = rows[state.selectedIndex];
         if (current && typeof current.scrollIntoView === 'function') {
             current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
@@ -194,9 +195,19 @@
         listEl.innerHTML = '';
 
         const limit = Math.min(interactions.length, state.maxItems);
+        let lastCategory = null;
 
         for (let i = 0; i < limit; i++) {
             const data = interactions[i];
+
+            if (data.categoryLabel && data.categoryLabel !== lastCategory) {
+                lastCategory = data.categoryLabel;
+                const group = document.createElement('div');
+                group.className = 'picker__group';
+                group.textContent = data.categoryLabel;
+                listEl.appendChild(group);
+            }
+
             const div = document.createElement('div');
             div.className = 'picker__item';
 
@@ -252,6 +263,7 @@
         cancelDiv.dataset.cancel = '1';
         listEl.appendChild(cancelDiv);
 
+        state.rows = Array.prototype.slice.call(listEl.querySelectorAll('.picker__item'));
         state.selectedIndex = 0;
         refreshSelection();
 
@@ -261,12 +273,14 @@
 
     function hidePicker() {
         pickerEl.classList.add('hidden');
+        state.rows = [];
+        state.selectedIndex = 0;
         post('setInteractionMarker', {});
         post('setInteractionPreview', {});
     }
 
     function moveSelection(delta) {
-        const total = listEl.children.length;
+        const total = state.rows.length;
         if (total === 0) return;
         state.lastNavDir = delta;
         state.selectedIndex = ((state.selectedIndex + delta) % total + total) % total;
@@ -274,8 +288,7 @@
     }
 
     function confirmSelection() {
-        const items = listEl.children;
-        const selected = items[state.selectedIndex];
+        const selected = state.rows[state.selectedIndex];
         if (!selected) {
             hidePicker();
             return;
@@ -297,7 +310,7 @@
         if (!target || typeof target.closest !== 'function') return;
         const row = target.closest('.picker__item');
         if (!row) return;
-        const index = Array.prototype.indexOf.call(listEl.children, row);
+        const index = state.rows.indexOf(row);
         if (index < 0) return;
         state.selectedIndex = index;
         confirmSelection();

@@ -1,6 +1,6 @@
 # wf-emote
 
-Standalone emote and world-interaction resource for RedM, built around its own torn-paper book UI: a live 3D preview of every emote, a flat picker for chairs / beds / pianos / baths, per-character favourites and native RDR2 UI sounds. No menu resource, no image pack, no escrow — every file here is editable.
+Standalone emote and world-interaction resource for RedM, built around its own torn-paper book UI: a live 3D preview of every emote, a category-grouped picker for chairs / beds / pianos / baths, per-character favourites and native RDR2 UI sounds. No menu resource, no image pack, no escrow — every file here is editable.
 
 **Version:** 1.1.0 · **Requires:** `oxmysql` · **Framework:** optional (RSG / VORP auto-detected for favourites) · **UI:** built-in NUI
 
@@ -14,10 +14,10 @@ The book in game: the highlighted emote is played by a transparent clone of your
 
 <p>
   <img src="screenshots/emote-book.png" width="360" alt="WF emote book open on the Greetings category">
-  <img src="screenshots/interaction-picker.png" width="295" alt="Flat world interaction picker">
+  <img src="screenshots/interaction-picker.png" width="295" alt="Category-grouped world interaction picker">
 </p>
 
-Left: the **F7 emote book** UI on its own — tabs, PNG icons, favourites stars, page counter and a footer describing the highlighted emote. Right: the **world interaction picker** (`J`) — every nearby action merged into one flat scrollable list.
+Left: the **F7 emote book** UI on its own — tabs, PNG icons, favourites stars, page counter and a footer describing the highlighted emote. Right: the **world interaction picker** (`J`) — every nearby action grouped under its category header.
 
 ---
 
@@ -29,7 +29,7 @@ Left: the **F7 emote book** UI on its own — tabs, PNG icons, favourites stars,
 - **Favourites per character** — stored in MySQL (`wf_emotes` table, created automatically), starred from the menu with `F` or `/wfefav <command>`.
 - **Shared emotes** — handshake, hug, cheer, pair dance (initiator leads / partner follows) and hostage (grab / victim). Both players face each other automatically.
 - **World interactions** — walk up to a chair, bench, bed, piano, bath, bucket…, press `J`, preview the scenario, `Enter` to start. Bathing cleans blood and dirt.
-- **One flat interaction list** — no category headers: wheel or arrows to scroll, click or `Enter` to start, `X` to stop.
+- **Grouped interaction list** — nearby actions sit under Chair / Bench / Bed / Piano / Bath headers: wheel or arrows to scroll, click or `Enter` to start, `X` to stop.
 - **Native RDR2 UI audio** — both surfaces play the game's own frontend sounds (open, close, navigate, accept, deny) through `PlaySoundFrontend`, and stay quiet on the initial layout pass. Pairs are configurable per surface.
 - **Dance clips included** — Macabre's *California Girls* and the 16-part *Thriller* routine are streamed with the resource, alongside the 29 redmorrow female pose clips.
 - **Upper-body variants** — `/e <command> upper` plays only the upper body.
@@ -75,7 +75,7 @@ There is nothing else to download: the UI, icons, fonts and streamed clips all s
 |---|---|
 | Walk near a usable object | Prompt appears |
 | `J` | Open / close the picker |
-| `↑` / `↓`, mouse wheel | Move through the flat list |
+| `↑` / `↓`, mouse wheel | Move through the grouped list |
 | `Enter` / click | Start the interaction |
 | `X` | Stop the interaction |
 | `Esc` | Close the picker |
@@ -161,7 +161,9 @@ Every command in the book is also available as `/e <command>`; the command names
 | `WFInteract.Theme.accentColor` | `#d2ae62` | Selection / divider accent |
 | `WFInteract.Theme.maxItems` | `250` | Hard cap on listed interactions |
 | `WFInteract.Theme.showLogo` / `.logoUrl` / `.logoSize` | `true` / `logo.png` / `4.8vw` | Header artwork |
-| `WFInteract.Theme.showCategoryDot` | `false` | Category dots are off — the picker is one flat list |
+| `WFInteract.Theme.showCategoryDot` | `false` | Category dots are off — headers group the list instead |
+| `WFInteract.CategoryOrder` | chair, bench, bed, piano, bath, misc | Order of the picker category headers |
+| `WFInteract.OpenKeyRaw` | `0x4A` (J) | Raw key that closes the picker again |
 
 ### UI sounds
 
@@ -211,7 +213,7 @@ Everything the book shows comes from `WF.Animations` in `animations.lua`. Add on
 - `Flag` / `UpperFlag` are only needed for looped streamed clips.
 - The same entry is reachable as `/e <Command>`.
 
-World interactions are ordinary tables in `wf_interact_config.lua` / `wf_interact_extra.lua` (object model, scenario or animation, heading, offsets), merged into the single flat picker at runtime.
+World interactions are ordinary tables in `wf_interact_config.lua` / `wf_interact_extra.lua` (object model, scenario or animation, heading, offsets), grouped by category at runtime.
 
 ---
 

@@ -20,9 +20,28 @@ local ObjectInteractionsByHash = {}
 local PointInteractions = {}
 local CachedAvailable = {}
 local CachedAvailableAt = 0
+local RawKeyDown = {}
+
+-- Windows virtual keys used as a keyboard fallback while the picker holds NUI
+-- focus (control polling can be swallowed by SetNuiFocus on some builds).
+local RAWK = {
+    up        = 0x26,
+    down      = 0x28,
+    accept    = 0x0D,
+    cancel    = 0x1B,
+    backspace = 0x08,
+}
 
 -- global flag: true while a world interaction is being performed
 WFInteractActive = false
+
+local function RawJustPressed(vk)
+    if not vk or not IsRawKeyPressed then return false end
+    local down = not not IsRawKeyPressed(vk)
+    local was  = RawKeyDown[vk] == true
+    RawKeyDown[vk] = down
+    return down and not was
+end
 
 
 local function SetLocalPlayerPreviewHidden(hidden)
@@ -673,6 +692,29 @@ local function GetAvailableInteractions()
         end
     end
 
+    -- group the picker by category: localised header text and a stable
+    -- Chair / Bench / Bed / Piano / Bath order, nearest entry first inside
+    local catLabels = L().categories or {}
+    local order     = WFInteract.CategoryOrder or {}
+    local rank      = {}
+    for i = 1, #order do rank[order[i]] = i end
+
+    for i = 1, #unique do
+        local item = unique[i]
+        item.categoryLabel = catLabels[item.category] or item.category or ''
+    end
+
+    table.sort(unique, function(a, b)
+        local ra = rank[a.category] or (#order + 1)
+        local rb = rank[b.category] or (#order + 1)
+        if ra ~= rb then return ra < rb end
+        if (a.category or '') ~= (b.category or '') then
+            return (a.category or '') < (b.category or '')
+        end
+        if a.distance ~= b.distance then return a.distance < b.distance end
+        return (a.displayLabel or '') < (b.displayLabel or '')
+    end)
+
     return unique
 end
 
@@ -718,6 +760,12 @@ local function OpenPicker()
     -- do not open the world picker while the emote book is open
     if WF_IsMenuOpen and WF_IsMenuOpen() then return end
     StopInteractionPreview()
+
+    -- the prompt fires on key-down: latch the key so the same press cannot
+    -- immediately close the picker again
+    if WFInteract.OpenKeyRaw and IsRawKeyPressed then
+        RawKeyDown[WFInteract.OpenKeyRaw] = not not IsRawKeyPressed(WFInteract.OpenKeyRaw)
+    end
 
     local available = GetFreshAvailableInteractions()
 
@@ -864,16 +912,28 @@ Citizen.CreateThread(function()
             SetLocalPlayerPreviewHidden(true)
             EnablePickerMouseLook()
 
-            if IsDisabledControlJustPressed(0, WFInteract.Controls.menuUp) then
+            -- poll every key first so the pressed-edge latches stay in sync
+            local rawUp     = RawJustPressed(RAWK.up)
+            local rawDown   = RawJustPressed(RAWK.down)
+            local rawAccept = RawJustPressed(RAWK.accept)
+            local rawCancel    = RawJustPressed(RAWK.cancel)
+            local rawCancelAlt = RawJustPressed(RAWK.backspace)
+            local rawToggle    = RawJustPressed(WFInteract.OpenKeyRaw)
+
+            if rawUp or IsDisabledControlJustPressed(0, WFInteract.Controls.menuUp) then
                 SendNUIMessage({ type = 'moveSelectionUp' })
             end
-            if IsDisabledControlJustPressed(0, WFInteract.Controls.menuDown) then
+            if rawDown or IsDisabledControlJustPressed(0, WFInteract.Controls.menuDown) then
                 SendNUIMessage({ type = 'moveSelectionDown' })
             end
-            if IsDisabledControlJustPressed(0, WFInteract.Controls.menuAccept) then
+            if rawAccept or IsDisabledControlJustPressed(0, WFInteract.Controls.menuAccept) then
                 ClosePicker(true)
             end
-            if IsDisabledControlJustPressed(0, WFInteract.Controls.menuCancel) or not CanStartInteraction then
+            if rawCancel
+                or rawCancelAlt
+                or rawToggle
+                or IsDisabledControlJustPressed(0, WFInteract.Controls.menuCancel)
+                or not CanStartInteraction then
                 ClosePicker(false)
             end
 
