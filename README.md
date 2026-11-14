@@ -1,0 +1,1 @@
+# wf-emote-for-rsg
