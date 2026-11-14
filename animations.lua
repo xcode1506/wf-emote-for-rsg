@@ -1,10 +1,9 @@
 --------------------------------------------------------------------------
 -- WF-EMOTE animation data
 -- Author: Hugo
--- Sources: sirevlc RP overhaul emotes (KIT emotes), fks-animations (GPL-3.0),
+-- Sources: KIT emote data, fks-animations (GPL-3.0),
 -- rm_30-custom-female-pose (streamed clips), femga/rdr3_discoveries
 -- (scenarios, prop scenarios, KIT emote lists).
--- Categories are arranged to mirror the sirevlc main menu (UI 6).
 --------------------------------------------------------------------------
 WF.Animations = {
 
@@ -685,8 +684,7 @@ WF.Animations = {
 }
 
 --------------------------------------------------------------------------
--- Menu tree (mirrors the sirevlc UI-6 structure; labels only, the menu is
--- drawn by this resource's own NUI)
+-- Menu tree (labels only; the menu is drawn by this resource's own NUI)
 --------------------------------------------------------------------------
 WF.Menu = {
     { label = 'Music',              cats = { 'music' } },
