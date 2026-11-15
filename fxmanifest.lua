@@ -6,7 +6,7 @@ lua54 'yes'
 name 'wf-emote'
 author 'Hugo'
 description 'WF Emote - standalone emote book for RedM: self-contained UI with scrolling category lists and 3D preview before selecting.'
-version '1.1.0'
+version '1.1.1'
 
 client_scripts {
     'config.lua',

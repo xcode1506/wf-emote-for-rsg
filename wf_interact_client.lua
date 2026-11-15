@@ -20,28 +20,9 @@ local ObjectInteractionsByHash = {}
 local PointInteractions = {}
 local CachedAvailable = {}
 local CachedAvailableAt = 0
-local RawKeyDown = {}
-
--- Windows virtual keys used as a keyboard fallback while the picker holds NUI
--- focus (control polling can be swallowed by SetNuiFocus on some builds).
-local RAWK = {
-    up        = 0x26,
-    down      = 0x28,
-    accept    = 0x0D,
-    cancel    = 0x1B,
-    backspace = 0x08,
-}
 
 -- global flag: true while a world interaction is being performed
 WFInteractActive = false
-
-local function RawJustPressed(vk)
-    if not vk or not IsRawKeyPressed then return false end
-    local down = not not IsRawKeyPressed(vk)
-    local was  = RawKeyDown[vk] == true
-    RawKeyDown[vk] = down
-    return down and not was
-end
 
 
 local function SetLocalPlayerPreviewHidden(hidden)
@@ -761,12 +742,6 @@ local function OpenPicker()
     if WF_IsMenuOpen and WF_IsMenuOpen() then return end
     StopInteractionPreview()
 
-    -- the prompt fires on key-down: latch the key so the same press cannot
-    -- immediately close the picker again
-    if WFInteract.OpenKeyRaw and IsRawKeyPressed then
-        RawKeyDown[WFInteract.OpenKeyRaw] = not not IsRawKeyPressed(WFInteract.OpenKeyRaw)
-    end
-
     local available = GetFreshAvailableInteractions()
 
     -- nothing in range: keep the current interaction instead of ending it
@@ -787,8 +762,9 @@ local function OpenPicker()
         theme        = WFInteract.Theme,
     })
 
-    -- cursor + wheel need NUI focus; keepInput keeps the Lua menu keys alive
-    SetNuiFocus(true, true, true)
+    -- Focus the page exactly like the F7 emote book (no keepInput): the NUI
+    -- receives keyboard events, so ui/script.js drives navigation and closing.
+    SetNuiFocus(true, true)
     PickerIsOpen = true
     SetLocalPlayerPreviewHidden(true)
     UpdateOpenPrompt()
@@ -830,6 +806,13 @@ RegisterNUICallback('stopInteraction', function(data, cb)
     SetLocalPlayerPreviewHidden(false)
     PlayUiSound('close')
     StopInteraction()
+    cb({})
+end)
+
+RegisterNUICallback('closeInteractionPicker', function(_, cb)
+    if PickerIsOpen then
+        ClosePicker(false)
+    end
     cb({})
 end)
 
@@ -912,32 +895,9 @@ Citizen.CreateThread(function()
             SetLocalPlayerPreviewHidden(true)
             EnablePickerMouseLook()
 
-            -- poll every key first so the pressed-edge latches stay in sync
-            local rawUp     = RawJustPressed(RAWK.up)
-            local rawDown   = RawJustPressed(RAWK.down)
-            local rawAccept = RawJustPressed(RAWK.accept)
-            local rawCancel    = RawJustPressed(RAWK.cancel)
-            local rawCancelAlt = RawJustPressed(RAWK.backspace)
-            local rawToggle    = RawJustPressed(WFInteract.OpenKeyRaw)
-
-            if rawUp or IsDisabledControlJustPressed(0, WFInteract.Controls.menuUp) then
-                SendNUIMessage({ type = 'moveSelectionUp' })
-            end
-            if rawDown or IsDisabledControlJustPressed(0, WFInteract.Controls.menuDown) then
-                SendNUIMessage({ type = 'moveSelectionDown' })
-            end
-            if rawAccept or IsDisabledControlJustPressed(0, WFInteract.Controls.menuAccept) then
-                ClosePicker(true)
-            end
-            if rawCancel
-                or rawCancelAlt
-                or rawToggle
-                or IsDisabledControlJustPressed(0, WFInteract.Controls.menuCancel)
-                or not CanStartInteraction then
+            if not CanStartInteraction then
                 ClosePicker(false)
-            end
-
-            if InteractionMarker then
+            elseif InteractionMarker then
                 DrawMarker()
             end
         elseif CurrentInteraction then

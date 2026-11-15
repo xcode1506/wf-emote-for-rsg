@@ -6,6 +6,7 @@
         selectedIndex: 0,
         maxItems: 50,
         rows: [],
+        pickerShownAt: 0,
         menuItems: [],
         menuIndex: 0,
         menuTabs: [],
@@ -268,6 +269,7 @@
         refreshSelection();
 
         pickerEl.classList.remove('hidden');
+        state.pickerShownAt = performance.now();
         requestAnimationFrame(updateListFades);
     }
 
@@ -325,6 +327,34 @@
         lastPickerWheelAt = now;
         moveSelection(event.deltaY > 0 ? 1 : -1);
     }, { passive: false });
+
+    window.addEventListener('keydown', function (event) {
+        if (pickerEl.classList.contains('hidden')) return;
+
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                moveSelection(1);
+                break;
+            case 'ArrowUp':
+                event.preventDefault();
+                moveSelection(-1);
+                break;
+            case 'Enter':
+                if (event.repeat) return;
+                event.preventDefault();
+                confirmSelection();
+                break;
+            case 'Escape':
+            case 'Backspace':
+            case 'j':
+            case 'J':
+                if (event.repeat || performance.now() - state.pickerShownAt < 250) return;
+                event.preventDefault();
+                post('closeInteractionPicker', {});
+                break;
+        }
+    });
 
     /* ------------------------------------------------------------------ */
     /* Emote book (F7)                                                     */

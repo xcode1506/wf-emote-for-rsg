@@ -46,20 +46,8 @@ WFInteract.StopKey = WFInteract.Keys.X -- unified stop button (X) for emotes and
 WFInteract.OpenHoldMode   = false
 WFInteract.OpenHoldTimeMs = 0
 
--- In-menu navigation uses RedM input actions and follows player keybinds.
--- These must be real RDR2 control names; `INPUT_GAME_MENU_*` does not exist
--- in RedM, so polling it never returns a press (no arrows, no Esc).
-WFInteract.Controls = {
-    menuUp     = `INPUT_FRONTEND_UP`,
-    menuDown   = `INPUT_FRONTEND_DOWN`,
-    menuAccept = `INPUT_FRONTEND_ACCEPT`,
-    menuCancel = `INPUT_FRONTEND_CANCEL`,
-}
-
--- Raw Windows virtual key for the picker open key (J). The prompt hash cannot
--- be polled once the picker holds NUI focus, so the same key is checked raw
--- to close the picker again.
-WFInteract.OpenKeyRaw = 0x4A
+-- Picker keyboard navigation (arrows, Enter, Esc/Backspace, J to close) is
+-- handled by ui/script.js while the NUI holds focus.
 
 -- Order of the category headers in the picker.
 WFInteract.CategoryOrder = { 'chair', 'bench', 'bed', 'piano', 'bath', 'misc' }
