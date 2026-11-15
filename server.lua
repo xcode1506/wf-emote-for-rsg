@@ -122,7 +122,20 @@ end)
 local SHARED_MAX_DISTANCE = 5.0
 local SHARED_COOLDOWN_MS  = 1500
 
-RegisterNetEvent('wf_emote:sharedRequest', function(emoteId, targetSrc)
+-- Positions come from the initiator, so only accept values close to where each
+-- ped actually is; anything further looks like a teleport attempt.
+local function sanitizePos(pos, ped)
+    if type(pos) ~= 'table' then return nil end
+    local x, y, z, h = tonumber(pos.x), tonumber(pos.y), tonumber(pos.z), tonumber(pos.h)
+    if not x or not y or not z or not h then return nil end
+    if math.abs(x) > 20000.0 or math.abs(y) > 20000.0 or z < -1000.0 or z > 5000.0 then return nil end
+    local c = GetEntityCoords(ped)
+    local dx, dy, dz = x - c.x, y - c.y, z - c.z
+    if math.sqrt(dx * dx + dy * dy + dz * dz) > SHARED_MAX_DISTANCE then return nil end
+    return { x = x, y = y, z = z, h = h }
+end
+
+RegisterNetEvent('wf_emote:sharedRequest', function(emoteId, targetSrc, pose)
     local src = source
     if type(emoteId) ~= 'string' or not validId[emoteId] then return end
     targetSrc = tonumber(targetSrc)
@@ -136,7 +149,14 @@ RegisterNetEvent('wf_emote:sharedRequest', function(emoteId, targetSrc)
     if not ped or ped == 0 or not targetPed or targetPed == 0 then return end
     if #(GetEntityCoords(ped) - GetEntityCoords(targetPed)) > SHARED_MAX_DISTANCE then return end
 
+    local mainPos, partnerPos
+    if type(pose) == 'table' then
+        mainPos = sanitizePos(pose.main, ped)
+        partnerPos = sanitizePos(pose.partner, targetPed)
+        if not mainPos or not partnerPos then mainPos, partnerPos = nil, nil end
+    end
+
     lastShared[src] = now
-    TriggerClientEvent('wf_emote:sharedPlay', targetSrc, emoteId, src, true)
-    TriggerClientEvent('wf_emote:sharedPlay', src, emoteId, targetSrc, false)
+    TriggerClientEvent('wf_emote:sharedPlay', targetSrc, emoteId, src, true, partnerPos)
+    TriggerClientEvent('wf_emote:sharedPlay', src, emoteId, targetSrc, false, mainPos)
 end)

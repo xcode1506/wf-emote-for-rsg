@@ -483,7 +483,7 @@ body {
 .emenu__tabs {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     margin: 0.5vh 0 0.7vh;
     padding: 0.35vh 0;
     background-image: url('assets/chip_torn.png');

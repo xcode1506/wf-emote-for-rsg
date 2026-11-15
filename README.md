@@ -24,10 +24,10 @@ Left: the **F7 emote book** UI on its own — tabs, PNG icons, favourites stars,
 ## Features
 
 - **634 entries** across greetings, gestures, reactions, taunts, dances, stances/posing, sitting, injured, jobs, police, trading, smoking, washing, saloon, music, scenarios, props and custom female poses.
-- **Built-in book UI** (`ui/index.html`) — tall dark sheet with WESTFURY / EMOTES branding, six tabs (All, General, Dance, Sit, Social, Action), scrolling lists, PNG icons, favourites stars and an `x / y` page indicator. The right side of the screen stays free for the preview.
+- **Built-in book UI** (`ui/index.html`) — tall dark sheet with WESTFURY / EMOTES branding, seven tabs (All, General, Dance, Sit, Social, Dialog, Action), scrolling lists, PNG icons, favourites stars and an `x / y` page indicator. The right side of the screen stays free for the preview.
 - **3D preview** — a transparent local clone of your character performs the highlighted animation beside you, with its own camera, before you commit to it. Selecting plays it on your real character.
 - **Favourites per character** — stored in MySQL (`wf_emotes` table, created automatically), starred from the menu with `F` or `/wfefav <command>`.
-- **Shared emotes** — handshake, hug, cheer, pair dance (initiator leads / partner follows) and hostage (grab / victim). Both players face each other automatically.
+- **Shared emotes** — handshake, hug, cheer, pair dance (initiator leads / partner follows), hostage (grab / victim), chokehold, grapple, pickpocket, pistol whip, slap (attacker / victim), rest in lap and two photo poses. Both players are moved to the animation's spacing (`OffsetFront` / `OffsetSide` / `OffsetZ`) and turned to face each other automatically.
 - **World interactions** — walk up to a chair, bench, bed, piano, bath, bucket…, press `J`, preview the scenario, `Enter` to start. Bathing cleans blood and dirt.
 - **Grouped interaction list** — nearby actions sit under Chair / Bench / Bed / Piano / Bath headers: wheel or arrows to scroll, click or `Enter` to start, `X` to stop.
 - **Native RDR2 UI audio** — both surfaces play the game's own frontend sounds (open, close, navigate, accept, deny) through `PlaySoundFrontend`, and stay quiet on the initial layout pass. Pairs are configurable per surface.
@@ -63,7 +63,7 @@ There is nothing else to download: the UI, icons, fonts and streamed clips all s
 |---|---|
 | `F7` | Open / close the book |
 | `↑` / `↓`, mouse wheel | Navigate the current list |
-| `←` / `→` | Switch tab (All, General, Dance, Sit, Social, Action) |
+| `←` / `→` | Switch tab (All, General, Dance, Sit, Social, Dialog, Action) |
 | `Enter` / click | Play the highlighted emote (or open the section) |
 | `F` | Toggle favourite on the highlighted emote |
 | `Backspace` / `Esc` | Back, then close |
@@ -102,11 +102,12 @@ Every command in the book is also available as `/e <command>`; the command names
 | Category | Entries | Examples |
 |---|---:|---|
 | greets | 27 | Tip hat, Big wave, Handshake, Fancy bow |
-| action | 48 | Point, Beckon, Coin flip, Hip shot |
+| action | 39 | Point, Beckon, Coin flip, Hip shot |
 | trading | 3 | Take notes |
 | smoking | 2 | Cigar, Cigarette |
 | police | 7 | Hands up, Surrender |
-| reaction | 35 | Laugh, Amazed |
+| reaction | 25 | Laugh, Amazed |
+| dialog | 77 | Explain it, Gossip, Whisper, Agree, Shrug, Sarcastic no, Bored listening, Talking moods |
 | taunts | 22 | Taunts and mock gestures |
 | dances | 47 | Waltz, Charleston, California Girls, Thriller 1–16 |
 | posing | 23 | Stances and idles |
@@ -119,7 +120,7 @@ Every command in the book is also available as `/e <command>`; the command names
 | props | 156 | Tray, newspaper, fiddle, toolbox, baby, basket, fan, parasol, book, candle, tea, champagne, apple |
 | scenarios | 191 | Native RDR2 scenarios |
 | washing | 1 | Washing |
-| shared | 5 | Handshake, hug, cheer, pair dance, hostage |
+| shared | 13 | Handshake, hug, cheer, pair dance, hostage, chokehold, grapple, pickpocket, pistol whip, slap, rest in lap, 2 photo poses |
 
 ---
 
@@ -163,7 +164,6 @@ Every command in the book is also available as `/e <command>`; the command names
 | `WFInteract.Theme.showLogo` / `.logoUrl` / `.logoSize` | `true` / `logo.png` / `4.8vw` | Header artwork |
 | `WFInteract.Theme.showCategoryDot` | `false` | Category dots are off — headers group the list instead |
 | `WFInteract.CategoryOrder` | chair, bench, bed, piano, bath, misc | Order of the picker category headers |
-| `WFInteract.OpenKeyRaw` | `0x4A` (J) | Raw key that closes the picker again |
 
 ### UI sounds
 

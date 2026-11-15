@@ -440,6 +440,7 @@ local MENU_TABS = {
     { key = 'dance',   label = 'Dance',   icon = 'dancer', value = 'cat:dances' },
     { key = 'sit',     label = 'Sit',     icon = 'chair',  value = 'cat:sitting' },
     { key = 'social',  label = 'Social',  icon = 'heart',  value = 'cat:shared' },
+    { key = 'dialog',  label = 'Dialog',  icon = 'dialog', value = 'cat:dialog' },
     { key = 'action',  label = 'Action',  icon = 'bolt',   value = 'menu:Standing / Roles' },
 }
 
@@ -453,16 +454,16 @@ local CAT_ICON = {
     smoking = 'smoke', washing = 'broom', posing = 'person', saloon = 'cup', injured = 'bandage',
     jobs = 'bag', reaction = 'laugh', action = 'cheer', taunts = 'laugh', greets = 'hat',
     shared = 'heart', dances = 'dancer', scenarios = 'gear', props = 'hammer',
-    poses = 'sparkle',
+    poses = 'sparkle', dialog = 'dialog',
 }
 
 local CAT_TAB = {
-    dances = 'dance', sitting = 'sit', shared = 'social',
+    dances = 'dance', sitting = 'sit', shared = 'social', dialog = 'dialog',
     police = 'action', trading = 'action', smoking = 'action', washing = 'action',
     posing = 'action', saloon = 'action', injured = 'action', jobs = 'action',
 }
 
-local NODE_TAB = { Emotes = 'general', ['Standing / Roles'] = 'action' }
+local NODE_TAB = { Emotes = 'general', ['Standing / Roles'] = 'action', Dialog = 'dialog' }
 
 local TYPE_DESC = {
     Anim = 'Emote', Clip = 'Pose', Prop = 'Prop emote', Scenario = 'Scenario',
@@ -642,7 +643,8 @@ local function playPicked(id)
         end
         soundEffect('accept')
         closeMenu(true)
-        TriggerServerEvent('wf_emote:sharedRequest', id, GetPlayerServerId(target))
+        local pose = buildSharedPose(anim, PlayerPedId(), GetPlayerPed(target))
+        TriggerServerEvent('wf_emote:sharedRequest', id, GetPlayerServerId(target), pose)
         return
     end
     soundEffect('accept')
@@ -880,12 +882,76 @@ nearestPlayer = function(maxDist)
     return best, bestDist
 end
 
-local function playShared(id, otherSrc, isPartner)
+-- Works out where each ped has to stand for a pair animation. Normal emotes
+-- split the move between both players (midpoint); poses that need the
+-- initiator to stay put (e.g. sitting) set Anchor = 'initiator'.
+buildSharedPose = function(anim, ped, otherPed)
+    if not ped or not otherPed or otherPed == 0 or otherPed == ped then return nil end
+    if IsPedOnMount(ped) or IsPedInAnyVehicle(ped, false) then return nil end
+    if IsPedOnMount(otherPed) or IsPedInAnyVehicle(otherPed, false) then return nil end
+
+    local c1, c2 = GetEntityCoords(ped), GetEntityCoords(otherPed)
+    local front = math.max(tonumber(anim.OffsetFront) or 0.9, 0.05)
+    local side = tonumber(anim.OffsetSide) or 0.0
+    local dz = tonumber(anim.OffsetZ) or 0.0
+
+    local dx, dy = c2.x - c1.x, c2.y - c1.y
+    local dist = math.sqrt(dx * dx + dy * dy)
+    local dirx, diry
+    if dist > 0.01 then
+        dirx, diry = dx / dist, dy / dist
+    else
+        local h = math.rad(GetEntityHeading(ped))
+        dirx, diry = math.sin(h), math.cos(h)
+    end
+
+    local mainPos, partnerPos
+    if anim.Anchor == 'initiator' then
+        mainPos = { x = c1.x, y = c1.y, z = c1.z }
+        partnerPos = { x = c1.x + dirx * front, y = c1.y + diry * front, z = c2.z + dz }
+    else
+        local midx, midy = (c1.x + c2.x) * 0.5, (c1.y + c2.y) * 0.5
+        local half = front * 0.5
+        mainPos = { x = midx - dirx * half, y = midy - diry * half, z = c1.z }
+        partnerPos = { x = midx + dirx * half, y = midy + diry * half, z = c2.z + dz }
+    end
+
+    if side ~= 0.0 then
+        local rx, ry = diry, -dirx
+        partnerPos.x = partnerPos.x + rx * side
+        partnerPos.y = partnerPos.y + ry * side
+    end
+
+    local mainH
+    if anim.MainHeading == 'keep' then
+        mainH = GetEntityHeading(ped)
+    else
+        mainH = GetHeadingFromVector_2d(partnerPos.x - mainPos.x, partnerPos.y - mainPos.y)
+    end
+    local partnerH
+    if anim.PartnerHeading == 'same' then
+        partnerH = mainH
+    elseif type(anim.PartnerHeading) == 'number' then
+        partnerH = mainH + anim.PartnerHeading
+    else
+        partnerH = GetHeadingFromVector_2d(mainPos.x - partnerPos.x, mainPos.y - partnerPos.y)
+    end
+
+    return {
+        main = { x = mainPos.x, y = mainPos.y, z = mainPos.z, h = mainH },
+        partner = { x = partnerPos.x, y = partnerPos.y, z = partnerPos.z, h = partnerH },
+    }
+end
+
+local function playShared(id, otherSrc, isPartner, myPos)
     local anim = byId[id]
     if not anim then return end
     local ped = PlayerPedId()
     local otherPed = GetPlayerPed(GetPlayerFromServerId(otherSrc))
-    if otherPed and otherPed ~= 0 and otherPed ~= ped then
+    if type(myPos) == 'table' and tonumber(myPos.x) and tonumber(myPos.y) and tonumber(myPos.z) and tonumber(myPos.h) then
+        SetEntityCoordsNoOffset(ped, myPos.x + 0.0, myPos.y + 0.0, myPos.z + 0.0, false, false, false)
+        SetEntityHeading(ped, myPos.h + 0.0)
+    elseif otherPed and otherPed ~= 0 and otherPed ~= ped then
         local c1, c2 = GetEntityCoords(ped), GetEntityCoords(otherPed)
         SetEntityHeading(ped, GetHeadingFromVector_2d(c2.x - c1.x, c2.y - c1.y))
     end
@@ -893,11 +959,11 @@ local function playShared(id, otherSrc, isPartner)
     if not ok then rawNotify({ title = 'WF Emote', description = err, type = 'error' }) end
 end
 
-RegisterNetEvent('wf_emote:sharedPlay', function(id, otherSrc, isPartner)
+RegisterNetEvent('wf_emote:sharedPlay', function(id, otherSrc, isPartner, myPos)
     if type(id) ~= 'string' then return end
     otherSrc = tonumber(otherSrc)
     if not otherSrc then return end
-    playShared(id, otherSrc, isPartner == true)
+    playShared(id, otherSrc, isPartner == true, myPos)
 end)
 
 ---------------------------------------------------------------------------
